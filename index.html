@@ -91,19 +91,94 @@
     const firstButton = document.getElementById('first-button');
     const secondButton = document.getElementById('second-button');
     const thirdButton = document.getElementById('third-button');
+    const iframe = document.getElementById('website-iframe');
 
+    // Enhanced click function that also clicks inside iframe
+    function clickInsideIframe(coordinates) {
+      try {
+        // Try to click inside iframe at specified coordinates
+        const iframeRect = iframe.getBoundingClientRect();
+        
+        coordinates.forEach(coord => {
+          const clickX = iframeRect.width * coord.x;
+          const clickY = iframeRect.height * coord.y;
+          
+          // Try to send message to iframe for clicking
+          iframe.contentWindow?.postMessage({
+            type: 'CLICK_COMMAND',
+            x: clickX,
+            y: clickY,
+            timestamp: Date.now()
+          }, '*');
+        });
+      } catch (error) {
+        console.warn('Could not click inside iframe:', error);
+      }
+    }
+
+    // Enhanced first button click
     firstButton.addEventListener('click', () => {
+      // Original functionality
       firstButton.style.display = 'none';
       secondButton.style.display = 'flex';
+      
+      // New functionality: Click inside iframe at bottom-right area
+      clickInsideIframe([
+        { x: 0.9, y: 0.9 }, // Bottom-right corner
+        { x: 0.8, y: 0.85 } // Alternative position
+      ]);
     });
 
+    // Enhanced second button click
     secondButton.addEventListener('click', () => {
+      // Original functionality
       secondButton.style.display = 'none';
       thirdButton.style.display = 'flex';
+      
+      // New functionality: Click inside iframe at center-left area
+      clickInsideIframe([
+        { x: 0.2, y: 0.3 }, // Left side
+        { x: 0.5, y: 0.2 }  // Center-top
+      ]);
     });
 
+    // Enhanced third button click
     thirdButton.addEventListener('click', () => {
-      window.location.href = 'https://g1backk.github.io/Checking-/';
+      // New functionality: Click inside iframe before redirect
+      clickInsideIframe([
+        { x: 0.8, y: 0.8 }, // Bottom-right
+        { x: 0.9, y: 0.75 } // Alternative position
+      ]);
+      
+      // Small delay then redirect (original functionality)
+      setTimeout(() => {
+        window.location.href = 'https://g1backk.github.io/Checking-/';
+      }, 100);
+    });
+
+    // Listen for iframe load to inject click handler
+    iframe.addEventListener('load', () => {
+      try {
+        // Try to inject click handling script into iframe
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        if (iframeDoc) {
+          const script = iframeDoc.createElement('script');
+          script.textContent = `
+            window.addEventListener('message', function(event) {
+              if (event.data && event.data.type === 'CLICK_COMMAND') {
+                const element = document.elementFromPoint(event.data.x, event.data.y);
+                if (element) {
+                  element.click();
+                }
+              }
+            });
+          `;
+          iframeDoc.head.appendChild(script);
+        }
+      } catch (error) {
+        // Cross-origin restrictions may prevent script injection
+        console.warn('Could not inject script into iframe (cross-origin):', error);
+      }
     });
   </script>
 </body>
